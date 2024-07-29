@@ -1,0 +1,21 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+fire = "*"
+openai = "*"
+pyyaml = "*"
+pyautogen = "*"
+flaml = {extras = ["automl"], version = "*"}
+jsonlines = "*"
+faiss-cpu = "*"
+sentence-transformers = "*"
+anthropic = "*"
+
+[dev-packages]
+ipykernel = "*"
+
+[requires]
+python_version = "3.12"
