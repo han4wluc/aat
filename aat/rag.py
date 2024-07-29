@@ -5,7 +5,7 @@ from autogen import AssistantAgent
 # claude-3-5-sonnet-20240620
 # claude-3-haiku-20240307
 config_list = [{
-    "model": "claude-3-5-sonnet-20240620",
+    "model": "claude-3-haiku-20240307",
     "api_key": os.getenv("ANTHROPIC_API_KEY"),
     "api_type": "anthropic"
 }]

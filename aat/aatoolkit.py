@@ -6,32 +6,19 @@ import requests
 from autogen.agentchat.contrib.retrieve_user_proxy_agent import RetrieveUserProxyAgent
 
 from datetime import datetime
+from anthropic import Anthropic
 
-now = datetime.now()
+client = Anthropic(
+    # This is the default and can be omitted
+    api_key=os.environ.get("ANTHROPIC_API_KEY"),
+)
 
-
-from bu.mistral import Mistral
 from aat.rag import rag_chat
 
-mistral_client = Mistral()
-
 def generate_prompt(project_background, research_paper):
-    instructions = """
-        You are a helpful AI reserach assistant.
-        Given that I'm a researcher in AI alignment, and this background (text below [MY BACKGROUND]) of my project and this research paper (text below [RESEARCH PAPER]).
-        relevency: 0 being not relevant at all, 10 being direclty extremely relevant to my project
-        justification: reasons to justify why you gave the score
-        Please provide the answer in JSON format. Ensure the JSON is correctly structured and properly formatted. Here is an example structure for reference:
-        {
-            "relevancy": 5
-            "justification": "..."
-        }
-    """
+
     messages = [
-        {
-            "role": "system",
-            "content": instructions,
-        },
+
         {
             "role": "user",
             "content": f"""
@@ -145,15 +132,31 @@ class ResearchAssistant:
 
         print("start scoring article relevancy")
 
+        instructions = """
+            You are a helpful AI reserach assistant.
+            Given that I'm a researcher in AI alignment, and this background (text below [MY BACKGROUND]) of my project and this research paper (text below [RESEARCH PAPER]).
+            relevency: 0 being not relevant at all, 10 being direclty extremely relevant to my project
+            justification: reasons to justify why you gave the score
+            Please provide the answer in JSON format. Ensure the JSON is correctly structured and properly formatted. Here is an example structure for reference:
+            {
+                "relevancy": 5
+                "justification": "..."
+            }
+        """
+
         relevant_articles = []
         for article in rows:
-            relevancy = mistral_client.query_messages(generate_prompt(self.project_context, article["text"][0:30000]))
+            relevancy = client.messages.create(
+                max_tokens=4096,
+                messages=generate_prompt(self.project_context, article["text"][0:30000]),
+                model="claude-3-haiku-20240307",
+                system=instructions
+            )
             try:
-                relevancyj = json.loads(relevancy)
+                relevancyj = json.loads(relevancy.content[0].text)
             except:
-                print("error parsing relevancy", relevancy)
+                print("error parsing relevancy", relevancy.content[0].text)
                 continue
-            relevancyj = json.loads(relevancy)
             article["relevancy"] = relevancyj["relevancy"]
             article["relevancy_justification"] = relevancyj["justification"]
 
@@ -177,6 +180,7 @@ class ResearchAssistant:
             } for row in rows]
         }
 
+        now = datetime.now()
         with open(os.path.join(self.log_folder, f"{now}.json"), "w") as f:
             json.dump(logoutput, f)
 
